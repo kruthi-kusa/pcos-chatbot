@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
 
@@ -43,6 +43,93 @@ class ChatResponse(BaseModel):
     response: str
     timestamp: datetime
 
+# Diet Generation Models
+class DietaryStyle(str, Enum):
+    VEGETARIAN = "vegetarian"
+    VEGAN = "vegan"
+    PESCATARIAN = "pescatarian"
+    OMNIVORE = "omnivore"
+    KETO = "keto"
+    MEDITERRANEAN = "mediterranean"
+
+class CuisinePreference(str, Enum):
+    MIXED = "mixed"
+    INDIAN = "indian"
+    MEDITERRANEAN = "mediterranean"
+    ASIAN = "asian"
+    AMERICAN = "american"
+    MEXICAN = "mexican"
+
+class Budget(str, Enum):
+    LOW = "low"
+    MODERATE = "moderate"
+    HIGH = "high"
+
+class PCOSSymptom(str, Enum):
+    INSULIN_RESISTANCE = "insulin_resistance"
+    WEIGHT_GAIN = "weight_gain"
+    IRREGULAR_PERIODS = "irregular_periods"
+    BLOATING = "bloating"
+    MOOD_SWINGS = "mood_swings"
+    ACNE = "acne"
+    HAIR_LOSS = "hair_loss"
+    FATIGUE = "fatigue"
+
+class DietPreferences(BaseModel):
+    dietary_style: DietaryStyle = DietaryStyle.VEGETARIAN
+    calorie_goal: int = Field(default=1800, ge=1200, le=3000)
+    days: int = Field(default=7, ge=1, le=14)
+    allergies: List[str] = Field(default_factory=list)
+    symptoms: List[PCOSSymptom] = Field(default_factory=list)
+    cuisine: CuisinePreference = CuisinePreference.MIXED
+    budget: Budget = Budget.MODERATE
+    avoid_foods: List[str] = Field(default_factory=list)
+    preferred_foods: List[str] = Field(default_factory=list)
+
+class MealInfo(BaseModel):
+    name: str
+    calories: int
+    ingredients: List[str]
+    prep_time: str
+    instructions: Optional[str] = None
+
+class DayMeals(BaseModel):
+    breakfast: Optional[MealInfo] = None
+    lunch: Optional[MealInfo] = None
+    dinner: Optional[MealInfo] = None
+    snack: Optional[MealInfo] = None
+
+class GroceryList(BaseModel):
+    proteins: List[str] = Field(default_factory=list)
+    vegetables: List[str] = Field(default_factory=list)
+    fruits: List[str] = Field(default_factory=list)
+    grains: List[str] = Field(default_factory=list)
+    dairy: List[str] = Field(default_factory=list)
+    pantry: List[str] = Field(default_factory=list)
+    spices: List[str] = Field(default_factory=list)
+
+class DietPlanResponse(BaseModel):
+    success: bool
+    diet_plan: Optional[Dict[str, DayMeals]] = None
+    user_preferences: Optional[DietPreferences] = None
+    generated_at: Optional[str] = None
+    grocery_list: Optional[GroceryList] = None
+    error: Optional[str] = None
+    fallback_plan: Optional[Dict[str, Any]] = None
+
+class SavedDietPlan(BaseModel):
+    id: str = Field(alias="_id")
+    user_id: str
+    plan_name: str
+    diet_plan: Dict[str, Any]
+    preferences: DietPreferences
+    grocery_list: GroceryList
+    created_at: datetime
+    is_active: bool = True
+    
+    class Config:
+        populate_by_name = True
+
 # Symptom Models
 class SymptomSeverity(str, Enum):
     MILD = "mild"
@@ -79,6 +166,13 @@ class MealPlan(BaseModel):
     date: datetime
     meals: dict[MealType, Meal]
     total_calories: Optional[int] = None
+
+# Quick Diet Request (simplified)
+class QuickDietRequest(BaseModel):
+    dietary_style: str = "vegetarian"
+    days: int = Field(default=3, ge=1, le=7)
+    calorie_goal: int = Field(default=1800, ge=1200, le=3000)
+    symptoms: List[str] = Field(default_factory=list)
 
 # General Response Models
 class MessageResponse(BaseModel):

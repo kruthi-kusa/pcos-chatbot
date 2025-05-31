@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from config.database import ping_database
 from config.settings import settings
 from routes import auth, chat
+import os
 
 # Application lifespan
 @asynccontextmanager
@@ -15,8 +16,9 @@ async def lifespan(app: FastAPI):
     db_connected = await ping_database()
     if not db_connected:
         print("⚠️  Running without database - some features will be limited")
+    else:
+        print("✅ Database connected successfully")
     
-    print("✅ Database connected successfully")
     print(f"🌐 CORS enabled for: {settings.frontend_url}")
     print("🤖 Hugging Face integration ready")
     print("📱 API is ready to serve requests!")
@@ -34,11 +36,15 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware - Allow all origins for development
+# CORS middleware - Updated for production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins
-    allow_credentials=False,  # Set to False when using allow_origins=["*"]
+    allow_origins=[
+        settings.frontend_url,
+        "https://*.vercel.app",  # Allow Vercel preview URLs
+        "http://localhost:3000",  # Local development
+    ],
+    allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
@@ -54,6 +60,7 @@ async def root():
         "message": "Welcome to PCOS Health Assistant API",
         "version": "1.0.0",
         "status": "healthy",
+        "environment": os.getenv("ENVIRONMENT", "production"),
         "features": [
             "User Authentication",
             "AI-Powered Chat Assistant",
@@ -71,11 +78,13 @@ async def health_check():
         return {
             "status": "healthy",
             "database": "connected" if db_status else "disconnected",
-            "api": "running"
+            "api": "running",
+            "environment": os.getenv("ENVIRONMENT", "production")
         }
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Service unhealthy: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
