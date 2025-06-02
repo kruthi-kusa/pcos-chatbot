@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 1440  # 24 hours
     huggingface_api_token: str = ""
     frontend_url: str = "http://localhost:3000"
+    environment: str = "development"
     
     class Config:
         env_file = ".env"

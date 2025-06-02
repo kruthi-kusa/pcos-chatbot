@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from config.database import ping_database
 from config.settings import settings
-from routes import auth, chat
+from routes import auth, chat, diet
 import os
 
 # Application lifespan
@@ -52,6 +52,7 @@ app.add_middleware(
 # Include routers
 app.include_router(auth.router)
 app.include_router(chat.router)
+app.include_router(diet.router)
 
 # Root endpoint
 @app.get("/")
